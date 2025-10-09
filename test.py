@@ -9,12 +9,11 @@ import uvicorn
 
 # 环境变量设置
 os.environ['SPCONV_ALGO'] = 'native'
-
 # 初始化 FastAPI 应用
 app = FastAPI()
 
 # 加载模型
-pipeline = TrellisImageTo3DPipeline.from_pretrained("./models/TRELLIS-image-large")
+pipeline = TrellisImageTo3DPipeline.from_pretrained("microsoft/TRELLIS-image-large")
 pipeline.cuda()
 
 @app.post("/sketch2trellis/picture23d/")
