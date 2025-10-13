@@ -33,8 +33,8 @@ async def generate_3d(file: UploadFile = File(...)):
     outputs = pipeline.run(
         image,
         seed=1,
-        sparse_structure_sampler_params={"steps": 12, "cfg_strength": 7.5},
-        slat_sampler_params={"steps": 12, "cfg_strength": 3},
+        sparse_structure_sampler_params={"steps": 16, "cfg_strength": 7.5},
+        slat_sampler_params={"steps": 16, "cfg_strength": 3},
     )
 
     # 渲染视频
