@@ -33,8 +33,8 @@ async def generate_3d(file: UploadFile = File(...)):
     outputs = pipeline.run(
         image,
         seed=1,
-        sparse_structure_sampler_params={"steps": 8, "cfg_strength": 7.5},
-        slat_sampler_params={"steps": 8, "cfg_strength": 3},
+        sparse_structure_sampler_params={"steps": 12, "cfg_strength": 7.5},
+        slat_sampler_params={"steps": 12, "cfg_strength": 3},
     )
 
     # 渲染视频
@@ -55,7 +55,7 @@ async def generate_3d(file: UploadFile = File(...)):
         outputs['gaussian'][0],
         outputs['mesh'][0],
         simplify=0.95,
-        texture_size=128,
+        texture_size=512,
     )
     glb_path = "results/asset.glb"
     glb.export(glb_path)
