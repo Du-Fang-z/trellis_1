@@ -16,6 +16,7 @@ app = FastAPI()
 pipeline = TrellisImageTo3DPipeline.from_pretrained("microsoft/TRELLIS-image-large")
 pipeline.sparse_structure_sampler_params['steps'] = 30
 pipeline.slat_sampler_params['steps'] = 30
+
 pipeline.cuda()
 
 @app.post("/sketch2trellis/picture23d/")
@@ -34,7 +35,9 @@ async def generate_3d(file: UploadFile = File(...)):
     # 运行 pipeline
     outputs = pipeline.run(
         image,
-        seed=1
+        seed=1,
+        sparse_structure_sampler_params={"steps": 12, "cfg_strength": 7.5},
+        slat_sampler_params={"steps": 12, "cfg_strength": 3},
     )
 
     # 渲染视频
@@ -79,6 +82,41 @@ async def generate_3d(file: UploadFile = File(...)):
     )
 
 
+
+
+@app.post("/sketch2trellis/video")
+async def generate_3d(file: UploadFile = File(...)):    
+    # 确保 temp 文件夹存在
+    os.makedirs("temp", exist_ok=True)
+
+    # 保存上传的图片
+    input_path = f"temp/{file.filename}"
+    with open(input_path, "wb") as f:
+        f.write(await file.read())
+
+    # 加载图片
+    image = Image.open(input_path)
+
+    # 运行 pipeline
+    outputs = pipeline.run(
+        image,
+        seed=1,
+        sparse_structure_sampler_params={"steps": 12, "cfg_strength": 7.5},
+        slat_sampler_params={"steps": 12, "cfg_strength": 3},
+    )
+
+    # 渲染视频
+    os.makedirs("results", exist_ok=True)
+    video = render_utils.render_video(outputs['gaussian'][0])['color']
+    video_path = "results/asset_gs.mp4"
+    imageio.mimsave(video_path, video, fps=30)
+
+    # 返回文件作为响应
+    return FileResponse(
+        path=video_path,
+        media_type="video/mp4",
+        filename="asset_gs.mp4"
+    )
+
 if __name__ == "__main__":
     uvicorn.run("test:app", host="0.0.0.0", port=8000, reload=True)
-
