@@ -85,7 +85,7 @@ async def generate_3d(file: UploadFile = File(...)):
 
 
 @app.post("/sketch2trellis/video")
-async def generate_3d(file: UploadFile = File(...)):    
+async def generate_3d_video(file: UploadFile = File(...)):    
     # 确保 temp 文件夹存在
     os.makedirs("temp", exist_ok=True)
 
