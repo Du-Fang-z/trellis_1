@@ -3,7 +3,7 @@ import imageio
 from PIL import Image
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import FileResponse
-from trellis.pipelines import TrellisImageTo3DPipeline, TrellisTextTo3DPipeline
+from trellis.pipelines import TrellisImageTo3DPipeline
 from trellis.utils import render_utils, postprocessing_utils
 import uvicorn
 
@@ -14,8 +14,6 @@ app = FastAPI()
 
 # 加载模型
 pipeline1 = TrellisImageTo3DPipeline.from_pretrained("microsoft/TRELLIS-image-large")
-pipeline2 = TrellisTextTo3DPipeline.from_pretrained("microsoft/TRELLIS-text-xlarge")
-pipeline2.cuda()
 pipeline1.cuda()
 
 @app.post("/sketch2trellis/picture23d/")
@@ -99,29 +97,6 @@ async def generate_3d_video(file: UploadFile = File(...)):
     # 运行 pipeline
     outputs = pipeline1.run(
         image,
-        seed=1,
-        sparse_structure_sampler_params={"steps": 12, "cfg_strength": 7.5},
-        slat_sampler_params={"steps": 12, "cfg_strength": 3},
-    )
-
-    # 渲染视频
-    os.makedirs("results", exist_ok=True)
-    video = render_utils.render_video(outputs['gaussian'][0])['color']
-    video_path = "results/asset_gs.mp4"
-    imageio.mimsave(video_path, video, fps=30)
-
-    # 返回文件作为响应
-    return FileResponse(
-        path=video_path,
-        media_type="video/mp4",
-        filename="asset_gs.mp4"
-    )
-
-@app.post("/sketch2trellis/text/video")
-async def generate_text_video(prompt: str = Form(...)):    
-    # 运行 pipeline
-    outputs = pipeline2.run(
-        prompt,
         seed=1,
         sparse_structure_sampler_params={"steps": 12, "cfg_strength": 7.5},
         slat_sampler_params={"steps": 12, "cfg_strength": 3},
