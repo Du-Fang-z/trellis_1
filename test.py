@@ -1,7 +1,7 @@
 import os
 import imageio
 from PIL import Image
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import FileResponse
 from trellis.pipelines import TrellisImageTo3DPipeline, TrellisTextTo3DPipeline
 from trellis.utils import render_utils, postprocessing_utils
@@ -143,3 +143,4 @@ async def generate_text_video(prompt: str = Form(...)):
 
 if __name__ == "__main__":
     uvicorn.run("test:app", host="0.0.0.0", port=8000, reload=True)
+    
