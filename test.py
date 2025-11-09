@@ -6,15 +6,23 @@ from fastapi.responses import FileResponse
 from trellis.pipelines import TrellisImageTo3DPipeline
 from trellis.utils import render_utils, postprocessing_utils
 import uvicorn
-
+import torch
+import gc
 # 环境变量设置
 os.environ['SPCONV_ALGO'] = 'native'
 # 初始化 FastAPI 应用
 app = FastAPI()
 
-# 加载模型
-pipeline1 = TrellisImageTo3DPipeline.from_pretrained("microsoft/TRELLIS-image-large")
-pipeline1.cuda()
+
+
+def load_model():
+    model = TrellisImageTo3DPipeline.from_pretrained("microsoft/TRELLIS-image-large")
+    return model.cuda()
+
+def unload_model(model):
+    del model
+    torch.cuda.empty_cache()
+    gc.collect()
 
 @app.post("/sketch2trellis/picture23d/")
 async def generate_3d(file: UploadFile = File(...)):    
@@ -29,6 +37,7 @@ async def generate_3d(file: UploadFile = File(...)):
     # 加载图片
     image = Image.open(input_path)
 
+    pipeline1 = load_model()
     # 运行 pipeline
     outputs = pipeline1.run(
         image,
@@ -36,7 +45,7 @@ async def generate_3d(file: UploadFile = File(...)):
         sparse_structure_sampler_params={"steps": 12, "cfg_strength": 7.5},
         slat_sampler_params={"steps": 12, "cfg_strength": 3},
     )
-
+    unload_model(pipeline1)
     # 渲染视频
     os.makedirs("results", exist_ok=True)
     video_paths = {}
@@ -93,6 +102,7 @@ async def generate_3d_video(file: UploadFile = File(...)):
 
     # 加载图片
     image = Image.open(input_path)
+    pipeline1 = load_model()
 
     # 运行 pipeline
     outputs = pipeline1.run(
@@ -101,6 +111,7 @@ async def generate_3d_video(file: UploadFile = File(...)):
         sparse_structure_sampler_params={"steps": 12, "cfg_strength": 7.5},
         slat_sampler_params={"steps": 12, "cfg_strength": 3},
     )
+    unload_model(pipeline1)
 
     # 渲染视频
     os.makedirs("results", exist_ok=True)
