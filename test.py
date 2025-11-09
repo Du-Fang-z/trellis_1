@@ -14,7 +14,7 @@ app = FastAPI()
 
 # 加载模型
 pipeline1 = TrellisImageTo3DPipeline.from_pretrained("microsoft/TRELLIS-image-large")
-pipeline1.cuda()
+pipeline1.cpu()
 
 @app.post("/sketch2trellis/picture23d/")
 async def generate_3d(file: UploadFile = File(...)):    
@@ -28,7 +28,7 @@ async def generate_3d(file: UploadFile = File(...)):
 
     # 加载图片
     image = Image.open(input_path)
-
+    pipeline1.cuda()
     # 运行 pipeline
     outputs = pipeline1.run(
         image,
@@ -36,7 +36,7 @@ async def generate_3d(file: UploadFile = File(...)):
         sparse_structure_sampler_params={"steps": 12, "cfg_strength": 7.5},
         slat_sampler_params={"steps": 12, "cfg_strength": 3},
     )
-
+    pipeline1.cpu()
     # 渲染视频
     os.makedirs("results", exist_ok=True)
     video_paths = {}
