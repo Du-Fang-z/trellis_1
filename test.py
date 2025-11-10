@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from trellis.pipelines import TrellisImageTo3DPipeline
 from trellis.utils import render_utils, postprocessing_utils
 import uvicorn
+import time
 
 # 环境变量设置
 os.environ['SPCONV_ALGO'] = 'native'
@@ -28,7 +29,10 @@ async def generate_3d(file: UploadFile = File(...)):
 
     # 加载图片
     image = Image.open(input_path)
+    time1 = time.time()
     pipeline1.cuda()
+    time2 = time.time()
+    print(f"Pipeline moved to GPU in {time2 - time1:.2f} seconds.")
     # 运行 pipeline
     outputs = pipeline1.run(
         image,
@@ -36,7 +40,6 @@ async def generate_3d(file: UploadFile = File(...)):
         sparse_structure_sampler_params={"steps": 12, "cfg_strength": 7.5},
         slat_sampler_params={"steps": 12, "cfg_strength": 3},
     )
-    pipeline1.cpu()
     # 渲染视频
     os.makedirs("results", exist_ok=True)
     video_paths = {}
@@ -59,6 +62,11 @@ async def generate_3d(file: UploadFile = File(...)):
     )
     glb_path = "results/asset.glb"
     glb.export(glb_path)
+    time3 = time.time()
+    print(f"3D model exported in {time3 - time2:.2f} seconds.")
+    pipeline1.cpu()
+    time4 = time.time()
+    print(f"Pipeline moved back to CPU in {time4 - time3:.2f} seconds.")
 
     # # 保存 PLY 文件
     # ply_path = "results/sample1.ply"
