@@ -102,6 +102,11 @@ async def generate_3d_video(file: UploadFile = File(...)):
     # 加载图片
     image = Image.open(input_path)
 
+    time1 = time.time()
+    pipeline1.cuda()
+    time2 = time.time()
+    print(f"Pipeline moved to GPU in {time2 - time1:.2f} seconds.")
+
     # 运行 pipeline
     outputs = pipeline1.run(
         image,
@@ -110,12 +115,18 @@ async def generate_3d_video(file: UploadFile = File(...)):
         slat_sampler_params={"steps": 12, "cfg_strength": 3},
     )
 
+    time3 = time.time()
+    print(f"3D model generated in {time3 - time2:.2f} seconds.")
     # 渲染视频
     os.makedirs("results", exist_ok=True)
     video = render_utils.render_video(outputs['gaussian'][0])['color']
     video_path = "results/asset_gs.mp4"
     imageio.mimsave(video_path, video, fps=30)
-
+    time4 = time.time()
+    print(f"Video rendered in {time4 - time3:.2f} seconds.")
+    pipeline1.cpu()
+    time5 = time.time()
+    print(f"Pipeline moved back to CPU in {time5 - time4:.2f} seconds.")
     # 返回文件作为响应
     return FileResponse(
         path=video_path,
