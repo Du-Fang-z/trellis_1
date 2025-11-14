@@ -7,6 +7,7 @@ from trellis.pipelines import TrellisImageTo3DPipeline
 from trellis.utils import render_utils, postprocessing_utils
 import uvicorn
 import time
+import torch
 
 # 环境变量设置
 os.environ['SPCONV_ALGO'] = 'native'
@@ -14,14 +15,14 @@ os.environ['SPCONV_ALGO'] = 'native'
 app = FastAPI()
 
 # 加载模型
+device0 = torch.device("cuda:0")
 pipeline1 = TrellisImageTo3DPipeline.from_pretrained("microsoft/TRELLIS-image-large")
-pipeline1.cpu()
+pipeline1.to(device0)
 
 @app.post("/sketch2trellis/picture23d/")
 async def generate_3d(file: UploadFile = File(...)):    
     # 确保 temp 文件夹存在
     os.makedirs("temp", exist_ok=True)
-
     # 保存上传的图片
     input_path = f"temp/{file.filename}"
     with open(input_path, "wb") as f:
@@ -29,16 +30,13 @@ async def generate_3d(file: UploadFile = File(...)):
 
     # 加载图片
     image = Image.open(input_path)
-    time1 = time.time()
-    pipeline1.cuda()
     time2 = time.time()
-    print(f"Pipeline moved to GPU in {time2 - time1:.2f} seconds.")
     # 运行 pipeline
     outputs = pipeline1.run(
         image,
         seed=1,
-        sparse_structure_sampler_params={"steps": 8, "cfg_strength": 7.5},
-        slat_sampler_params={"steps": 8, "cfg_strength": 3},
+        sparse_structure_sampler_params={"steps": 12, "cfg_strength": 7.5},
+        slat_sampler_params={"steps": 12, "cfg_strength": 3},
     )
     # 渲染视频
     os.makedirs("results", exist_ok=True)
@@ -58,15 +56,12 @@ async def generate_3d(file: UploadFile = File(...)):
         outputs['gaussian'][0],
         outputs['mesh'][0],
         simplify=0.95,
-        texture_size=256,
+        texture_size=512,
     )
     glb_path = "results/asset.glb"
     glb.export(glb_path)
     time3 = time.time()
     print(f"3D model exported in {time3 - time2:.2f} seconds.")
-    pipeline1.cpu()
-    time4 = time.time()
-    print(f"Pipeline moved back to CPU in {time4 - time3:.2f} seconds.")
 
     # # 保存 PLY 文件
     # ply_path = "results/sample1.ply"
@@ -102,11 +97,8 @@ async def generate_3d_video(file: UploadFile = File(...)):
     # 加载图片
     image = Image.open(input_path)
 
-    time1 = time.time()
-    pipeline1.cuda()
-    time2 = time.time()
-    print(f"Pipeline moved to GPU in {time2 - time1:.2f} seconds.")
 
+    time2 = time.time()
     # 运行 pipeline
     outputs = pipeline1.run(
         image,
@@ -124,9 +116,6 @@ async def generate_3d_video(file: UploadFile = File(...)):
     imageio.mimsave(video_path, video, fps=30)
     time4 = time.time()
     print(f"Video rendered in {time4 - time3:.2f} seconds.")
-    pipeline1.cpu()
-    time5 = time.time()
-    print(f"Pipeline moved back to CPU in {time5 - time4:.2f} seconds.")
     # 返回文件作为响应
     return FileResponse(
         path=video_path,
