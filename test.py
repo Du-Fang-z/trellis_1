@@ -56,7 +56,7 @@ async def generate_3d(file: UploadFile = File(...)):
         outputs['gaussian'][0],
         outputs['mesh'][0],
         simplify=0.95,
-        texture_size=512,
+        texture_size=256,
     )
     glb_path = "results/asset.glb"
     glb.export(glb_path)
